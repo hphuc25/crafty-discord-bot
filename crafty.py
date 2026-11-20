@@ -162,8 +162,8 @@ class CraftyClient:
             "POST", f"/api/v2/servers/{server_id}/action/{action}"
         )
 
-    async def resolve_server(self, query: str | None = None) -> dict[str, Any]:
-        """Pick a server by name/id, by default, or the only available server."""
+    async def resolve_server(self) -> dict[str, Any]:
+        """Return the server configured by DEFAULT_SERVER_ID (or the only one available)."""
         servers = await self.get_servers()
         if not servers:
             raise CraftyAPIError("Crafty has no servers accessible to this account.")
@@ -179,18 +179,13 @@ class CraftyClient:
                 value in str(f).lower() for f in fields
             )
 
-        if query and query.strip():
-            for server in servers:
-                if matches(server, query.strip()):
-                    return server
-            raise CraftyAPIError(f"No server found matching '{query}'.")
-
         if self.default_server_id:
             for server in servers:
                 if matches(server, self.default_server_id):
                     return server
             raise CraftyAPIError(
-                "DEFAULT_SERVER_ID in .env does not match any server on Crafty."
+                "DEFAULT_SERVER_ID does not match any server on Crafty. "
+                f"Available servers: {', '.join(s.get('server_name', '?') for s in servers)}"
             )
 
         if len(servers) == 1:
@@ -198,5 +193,5 @@ class CraftyClient:
 
         names = ", ".join(s.get("server_name", "?") for s in servers)
         raise CraftyAPIError(
-            f"Multiple servers found ({names}). Select one using the command's autocomplete."
+            f"DEFAULT_SERVER_ID is not set and multiple servers were found ({names})."
         )

@@ -1,4 +1,4 @@
-"""Discord bot for managing Crafty Controller servers via API v2 (py-cord)."""
+"""Discord bot for managing a fixed Crafty Controller server via API v2 (py-cord)."""
 
 import asyncio
 import json
@@ -7,7 +7,6 @@ import os
 from datetime import datetime
 
 import discord
-from discord import Option
 from dotenv import load_dotenv
 
 from crafty import CraftyAPIError, CraftyClient
@@ -39,6 +38,11 @@ if not (DISCORD_TOKEN and CRAFTY_BASE_URL):
         "❌ Missing DISCORD_TOKEN or CRAFTY_BASE_URL. "
         "Copy .env.example to .env and fill in the configuration."
     )
+if not DEFAULT_SERVER_ID:
+    raise SystemExit(
+        "❌ DEFAULT_SERVER_ID is required. Set it to the ID/UUID of the server "
+        "all commands should target."
+    )
 if not CRAFTY_API_TOKEN and not (CRAFTY_USERNAME and CRAFTY_PASSWORD):
     raise SystemExit(
         "❌ CRAFTY_API_TOKEN (recommended) or CRAFTY_USERNAME + CRAFTY_PASSWORD "
@@ -66,29 +70,6 @@ COLOR_INFO = discord.Color.blurple()
 # --------------------------------------------------------------------- #
 # Helpers
 # --------------------------------------------------------------------- #
-async def server_autocomplete(ctx: discord.AutocompleteContext) -> list[str]:
-    try:
-        servers = await crafty.get_servers()
-    except Exception:
-        return []
-    typed = (ctx.value or "").lower()
-    return [
-        s.get("server_name", "")
-        for s in servers
-        if typed in s.get("server_name", "").lower()
-    ][:25]
-
-
-def server_option():
-    """Shared option for commands that need to select a server."""
-    return Option(
-        str,
-        "Server name or UUID (leave empty if Crafty has only one server or DEFAULT_SERVER_ID is set)",
-        autocomplete=server_autocomplete,
-        required=False,
-    )
-
-
 async def error_reply(ctx: discord.ApplicationContext, err: Exception) -> None:
     if isinstance(err, CraftyAPIError):
         message = str(err)
@@ -137,20 +118,18 @@ async def on_ready() -> None:
     log.info("Logged in to Discord as %s (ID: %s)", bot.user, bot.user.id)
     mode = "API token" if CRAFTY_API_TOKEN else "username/password"
     log.info("Crafty authentication: %s", mode)
+    log.info("Target server: %s", DEFAULT_SERVER_ID)
 
 
 # --------------------------------------------------------------------- #
-# Commands
+# Commands (always target the server configured in DEFAULT_SERVER_ID)
 # --------------------------------------------------------------------- #
 @bot.slash_command(name="ip", description="Show the server IP address")
-async def ip(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
+async def ip(ctx: discord.ApplicationContext):
     """Show the server IP address and port."""
     await ctx.defer()
     try:
-        srv = await crafty.resolve_server(server)
+        srv = await crafty.resolve_server()
         stats = await crafty.get_stats(srv["server_id"])
         address = stats.get("server_port") or srv.get("server_port")
         ip_addr = srv.get("server_ip") or "Unknown"
@@ -179,10 +158,7 @@ async def ip(
 
 
 @bot.slash_command(name="map", description="Show the server map")
-async def map_cmd(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
+async def map_cmd(ctx: discord.ApplicationContext):
     """Send a link to the configured web map (BlueMap/dynmap/...)."""
     if not MAP_URL:
         return await ctx.respond(
@@ -190,7 +166,7 @@ async def map_cmd(
         )
     await ctx.defer()
     try:
-        srv = await crafty.resolve_server(server)
+        srv = await crafty.resolve_server()
         embed = discord.Embed(
             title=f"🗺️ Map — {server_name(srv)}",
             description=f"[👉 Click here to open the map]({MAP_URL})",
@@ -211,14 +187,11 @@ async def map_cmd(
 
 
 @bot.slash_command(name="status", description="Show the server status")
-async def status(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
+async def status(ctx: discord.ApplicationContext):
     """Show status, players, CPU/RAM, world, etc."""
     await ctx.defer()
     try:
-        srv = await crafty.resolve_server(server)
+        srv = await crafty.resolve_server()
         stats = await crafty.get_stats(srv["server_id"])
 
         running = bool(stats.get("running"))
@@ -263,10 +236,10 @@ async def status(
         await error_reply(ctx, err)
 
 
-async def _power_action(ctx: discord.ApplicationContext, server, action: str, verb: str) -> None:
+async def _power_action(ctx: discord.ApplicationContext, action: str, verb: str) -> None:
     await ctx.defer()
     try:
-        srv = await crafty.resolve_server(server)
+        srv = await crafty.resolve_server()
         name = server_name(srv)
         if action == "start_server":
             stats = await crafty.get_stats(srv["server_id"])
@@ -285,27 +258,18 @@ async def _power_action(ctx: discord.ApplicationContext, server, action: str, ve
 
 
 @bot.slash_command(name="start", description="Start the server")
-async def start(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
-    await _power_action(ctx, server, "start_server", "start")
+async def start(ctx: discord.ApplicationContext):
+    await _power_action(ctx, "start_server", "start")
 
 
 @bot.slash_command(name="stop", description="Stop the server (bonus)")
-async def stop(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
-    await _power_action(ctx, server, "stop_server", "stop")
+async def stop(ctx: discord.ApplicationContext):
+    await _power_action(ctx, "stop_server", "stop")
 
 
 @bot.slash_command(name="restart", description="Restart the server (bonus)")
-async def restart(
-    ctx: discord.ApplicationContext,
-    server: server_option() = None,  # type: ignore[valid-type]
-):
-    await _power_action(ctx, server, "restart_server", "restart")
+async def restart(ctx: discord.ApplicationContext):
+    await _power_action(ctx, "restart_server", "restart")
 
 
 # --------------------------------------------------------------------- #
