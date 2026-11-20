@@ -23,6 +23,9 @@ services:
       CRAFTY_VERIFY_SSL: "false"
       # Fixed server all slash commands target (ID/UUID from Crafty)
       DEFAULT_SERVER_ID: "17bc982d-91bb-4081-a40e-f9a31f7ae73f"
+      # Manual address for /ip. When SERVER_IP is set, /ip makes no Crafty API call.
+      SERVER_IP: ""
+      SERVER_PORT: ""
       PUBLIC_IP: ""
       MAP_URL: "https://map.example.com/"
       TEST_GUILD_ID: ""

@@ -6,7 +6,7 @@ A Discord bot built with Python + [py-cord](https://github.com/Pycord-Developmen
 
 | Command | Description |
 |---------|-------------|
-| `/ip` | Show the server IP address and port (uses `PUBLIC_IP` when the IP in Crafty is localhost/private). |
+| `/ip` | Show the server IP address and port. Set `SERVER_IP`/`SERVER_PORT` to hardcode the answer — no Crafty API call is made. Otherwise it reads the server data from Crafty. |
 | `/map` | Send a link/button to the configured web map (BlueMap, dynmap, ...). |
 | `/status` | Show server state, player count, CPU/RAM, world, version, uptime, and player list. |
 | `/start` | Start the server (no-op if it is already running or starting). |
@@ -99,13 +99,16 @@ CRAFTY_BASE_URL: "http://host.docker.internal:8443"
 | `CRAFTY_TOTP` | ❌ | 2FA code (for the fallback login method) |
 | `CRAFTY_VERIFY_SSL` | ❌ | `false` by default because Crafty uses a self-signed cert |
 | `DEFAULT_SERVER_ID` | ✅ | ID/UUID of the single server all commands target |
-| `PUBLIC_IP` | ❌ | Public IP to show in `/ip` |
+| `SERVER_IP` | ❌ | Manual IP shown by `/ip`; skips the Crafty API |
+| `SERVER_PORT` | ❌ | Manual port shown by `/ip` (optional) |
+| `PUBLIC_IP` | ❌ | Fallback/public IP for `/ip` when `SERVER_IP` is unset |
 | `MAP_URL` | ❌ | Web map link for `/map` |
 | `TEST_GUILD_ID` | ❌ | Register commands instantly in one guild |
 
 \* Provide at least one of: `CRAFTY_API_TOKEN` **or** the pair `CRAFTY_USERNAME` + `CRAFTY_PASSWORD`.
 
 ## Technical notes
+- `CRAFTY_BASE_URL` must be a full URL including the scheme, e.g. `https://localhost:8443` (per the Crafty OpenAPI spec). A bare `127.0.0.1:8443` fails with `NonHttpUrlClientError`.
 - Every request sends `Authorization: Bearer <token>`. With `CRAFTY_API_TOKEN`, the token is used from the start (no `/auth/login`); if Crafty returns 401 and credentials are available, the bot logs in once and retries.
 - A Crafty API key is essentially a JWT signed with Crafty's secret, carrying a `token_id`, created via `GET /api/v2/users/{user_id}/key/{key_id}` (that endpoint requires session auth to create).
 - Status comes from `GET /api/v2/servers/{id}/stats`; power actions use `POST /api/v2/servers/{id}/action/{action}`.

@@ -29,7 +29,9 @@ CRAFTY_PASSWORD = os.getenv("CRAFTY_PASSWORD", "").strip()
 CRAFTY_TOTP = os.getenv("CRAFTY_TOTP", "").strip()
 CRAFTY_VERIFY_SSL = os.getenv("CRAFTY_VERIFY_SSL", "false").lower() in ("1", "true", "yes")
 DEFAULT_SERVER_ID = os.getenv("DEFAULT_SERVER_ID", "").strip()
-PUBLIC_IP = os.getenv("PUBLIC_IP", "").strip()
+# Manual IP shown by /ip. Falls back to PUBLIC_IP for existing setups.
+SERVER_IP = os.getenv("SERVER_IP", "").strip() or os.getenv("PUBLIC_IP", "").strip()
+SERVER_PORT = os.getenv("SERVER_PORT", "").strip()
 MAP_URL = os.getenv("MAP_URL", "").strip()
 TEST_GUILD_ID = os.getenv("TEST_GUILD_ID", "").strip()
 
@@ -129,6 +131,18 @@ async def ip(ctx: discord.ApplicationContext):
     """Show the server IP address and port."""
     await ctx.defer()
     try:
+        # Manual override: no Crafty API call at all.
+        if SERVER_IP:
+            embed = discord.Embed(title="🌐 Server address", color=COLOR_INFO)
+            embed.add_field(name="IP", value=f"`{SERVER_IP}`", inline=True)
+            if SERVER_PORT:
+                embed.add_field(name="Port", value=f"`{SERVER_PORT}`", inline=True)
+                embed.add_field(
+                    name="Connection", value=f"`{SERVER_IP}:{SERVER_PORT}`", inline=False
+                )
+            embed.set_footer(text="Address from SERVER_IP / SERVER_PORT in .env")
+            return await ctx.respond(embed=embed)
+
         srv = await crafty.resolve_server()
         stats = await crafty.get_stats(srv["server_id"])
         address = stats.get("server_port") or srv.get("server_port")

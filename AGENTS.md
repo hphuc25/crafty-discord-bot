@@ -7,6 +7,8 @@ Small py-cord bot. No test/lint/CI config — verify manually as below.
 - `crafty.py` is the async Crafty API v2 client; `main()` in `bot.py` starts Discord and closes the client in `finally`.
 - Auth: `CRAFTY_API_TOKEN` (JWT from a Crafty API key) is primary and uses no `/auth/login`. Username/password is fallback only; HTTP 401 triggers one forced re-login + retry. Don't reintroduce mandatory login.
 - Commands are fixed to one server: `DEFAULT_SERVER_ID` is required and `crafty.resolve_server()` takes no query. Do not re-add a `server` slash-command option or autocomplete.
+- `SERVER_IP` (or legacy `PUBLIC_IP`) makes `/ip` answer purely from env without any Crafty API call; `SERVER_PORT` is optional.
+- `CRAFTY_BASE_URL` must include `http://` or `https://`; the Crafty OpenAPI spec defines it as a full base URL. A bare host:port raises `NonHttpUrlClientError`.
 
 ## py-cord quirks (hit during development)
 - **Never add `from __future__ import annotations` to `bot.py`.** It stringifies `discord.Option` annotations, so py-cord silently registers options with no description and no autocomplete. It is fine in `crafty.py`.
