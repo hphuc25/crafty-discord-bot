@@ -1,0 +1,37 @@
+services:
+  crafty-discord-bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: crafty-discord-bot:latest
+    container_name: crafty-discord-bot
+    restart: unless-stopped
+    init: true
+
+    # Example configuration - replace the placeholder values before deploying.
+    # No external .env file is required.
+    environment:
+      DISCORD_TOKEN: "your_discord_bot_token_here"
+      CRAFTY_BASE_URL: "http://host.docker.internal:8443"
+      CRAFTY_API_TOKEN: "your_crafty_api_token_jwt_here"
+
+      # Fallback only (leave empty when CRAFTY_API_TOKEN is set):
+      CRAFTY_USERNAME: ""
+      CRAFTY_PASSWORD: ""
+      CRAFTY_TOTP: ""
+
+      CRAFTY_VERIFY_SSL: "false"
+      DEFAULT_SERVER_ID: ""
+      PUBLIC_IP: ""
+      MAP_URL: "https://map.example.com/"
+      TEST_GUILD_ID: ""
+
+    # Allows http://host.docker.internal:8443 when Crafty runs on the host machine.
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
