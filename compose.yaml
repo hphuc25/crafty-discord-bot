@@ -21,7 +21,8 @@ services:
       CRAFTY_TOTP: ""
 
       CRAFTY_VERIFY_SSL: "false"
-      DEFAULT_SERVER_ID: ""
+      # Optional: server name, ID, or UUID used when a command omits `server`
+      DEFAULT_SERVER_ID: "your_server_uuid_here"
       PUBLIC_IP: ""
       MAP_URL: "https://map.example.com/"
       TEST_GUILD_ID: ""

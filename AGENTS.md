@@ -6,6 +6,7 @@ Small py-cord bot. No test/lint/CI config — verify manually as below.
 - `bot.py` is the only entrypoint and holds all slash commands. It calls `load_dotenv()` and validates env **at import time**, raising `SystemExit` if `DISCORD_TOKEN`/`CRAFTY_BASE_URL` or an auth method is missing — any import-based check needs dummy values.
 - `crafty.py` is the async Crafty API v2 client; `main()` in `bot.py` starts Discord and closes the client in `finally`.
 - Auth: `CRAFTY_API_TOKEN` (JWT from a Crafty API key) is primary and uses no `/auth/login`. Username/password is fallback only; HTTP 401 triggers one forced re-login + retry. Don't reintroduce mandatory login.
+- `resolve_server()` matches a server by name, `server_id`, or `server_uuid` (exact or substring). Autocomplete only suggests names, but users can paste a UUID into the `server` option; `DEFAULT_SERVER_ID` uses the same matching.
 
 ## py-cord quirks (hit during development)
 - **Never add `from __future__ import annotations` to `bot.py`.** It stringifies the `server: server_option()` annotation, so py-cord silently registers the option with no description and no autocomplete. It is fine in `crafty.py`.

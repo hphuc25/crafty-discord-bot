@@ -13,7 +13,14 @@ A Discord bot built with Python + [py-cord](https://github.com/Pycord-Developmen
 | `/stop` | Stop the server *(bonus)*. |
 | `/restart` | Restart the server *(bonus)*. |
 
-If Crafty has multiple servers, every command has a **server** option with name autocomplete. Set `DEFAULT_SERVER_ID` to skip selecting one.
+If Crafty has multiple servers, every command has a **server** option. Autocomplete lists server names, but you can also paste a server ID/UUID directly:
+
+```
+/status server:My Survival
+/start server:17bc982d-91bb-4081-a40e-f9a31f7ae73f
+```
+
+To skip selecting a server every time, set `DEFAULT_SERVER_ID` to the server's ID or UUID in the `environment:` block of `compose.yaml` (or in `.env` for local runs). With a single server, or when `DEFAULT_SERVER_ID` is set, the option can be left empty.
 
 ## Setup
 
@@ -98,7 +105,7 @@ CRAFTY_BASE_URL: "http://host.docker.internal:8443"
 | `CRAFTY_PASSWORD` | ✅* | Password (only if not using an API token) |
 | `CRAFTY_TOTP` | ❌ | 2FA code (for the fallback login method) |
 | `CRAFTY_VERIFY_SSL` | ❌ | `false` by default because Crafty uses a self-signed cert |
-| `DEFAULT_SERVER_ID` | ❌ | Default server ID when multiple servers exist |
+| `DEFAULT_SERVER_ID` | ❌ | Default server name, ID, or UUID when multiple servers exist |
 | `PUBLIC_IP` | ❌ | Public IP to show in `/ip` |
 | `MAP_URL` | ❌ | Web map link for `/map` |
 | `TEST_GUILD_ID` | ❌ | Register commands instantly in one guild |

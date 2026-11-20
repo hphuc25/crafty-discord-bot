@@ -83,7 +83,7 @@ def server_option():
     """Shared option for commands that need to select a server."""
     return Option(
         str,
-        "Server name (leave empty if Crafty has only one server or DEFAULT_SERVER_ID is set)",
+        "Server name or UUID (leave empty if Crafty has only one server or DEFAULT_SERVER_ID is set)",
         autocomplete=server_autocomplete,
         required=False,
     )
