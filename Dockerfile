@@ -6,10 +6,7 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 
 WORKDIR /app
 
-# CA certs are needed if you set CRAFTY_VERIFY_SSL=true.
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends ca-certificates \
-    && rm -rf /var/lib/apt/lists/*
+# The python:3.12-slim base image already includes ca-certificates, so no apt step is needed.
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
