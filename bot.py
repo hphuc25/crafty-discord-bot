@@ -34,6 +34,17 @@ SERVER_IP = os.getenv("SERVER_IP", "").strip() or os.getenv("PUBLIC_IP", "").str
 SERVER_PORT = os.getenv("SERVER_PORT", "").strip()
 MAP_URL = os.getenv("MAP_URL", "").strip()
 TEST_GUILD_ID = os.getenv("TEST_GUILD_ID", "").strip()
+# Version shown by /status instead of the value reported by Crafty.
+SERVER_VERSION = os.getenv("SERVER_VERSION", "").strip()
+
+# /stop and /restart are restricted to these Discord guild(s) and role(s).
+# Comma-separated IDs are supported.
+def _parse_ids(raw: str) -> set[int]:
+    return {int(part.strip()) for part in raw.split(",") if part.strip().isdigit()}
+
+
+STOP_RESTART_GUILD_IDS = _parse_ids(os.getenv("STOP_RESTART_GUILD_ID", ""))
+STOP_RESTART_ROLE_IDS = _parse_ids(os.getenv("STOP_RESTART_ROLE_ID", ""))
 
 if not (DISCORD_TOKEN and CRAFTY_BASE_URL):
     raise SystemExit(
@@ -112,6 +123,32 @@ def parse_players(raw: object) -> list[str]:
     return []
 
 
+def format_mem(raw: object) -> str:
+    """Crafty may return bytes as a float; always display megabytes."""
+    text = str(raw).strip() if raw is not None else ""
+    if not text:
+        return "—"
+    if text.lower().endswith(("mb", "gb", "kb", "b")):
+        return text
+    try:
+        value = float(text)
+    except ValueError:
+        return text
+    # Values >= 1 MiB are bytes from Crafty; smaller numbers are already in MB.
+    if value >= 1024 * 1024:
+        value /= 1024 * 1024
+    return f"{value:.1f} MB"
+
+
+def can_use_power_commands(ctx: discord.ApplicationContext) -> bool:
+    if not STOP_RESTART_GUILD_IDS or not STOP_RESTART_ROLE_IDS:
+        return False
+    if ctx.guild is None or ctx.guild.id not in STOP_RESTART_GUILD_IDS:
+        return False
+    role_ids = {role.id for role in getattr(ctx.author, "roles", [])}
+    return bool(role_ids & STOP_RESTART_ROLE_IDS)
+
+
 # --------------------------------------------------------------------- #
 # Events
 # --------------------------------------------------------------------- #
@@ -121,6 +158,11 @@ async def on_ready() -> None:
     mode = "API token" if CRAFTY_API_TOKEN else "username/password"
     log.info("Crafty authentication: %s", mode)
     log.info("Target server: %s", DEFAULT_SERVER_ID)
+    log.info(
+        "Stop/restart access - guilds: %s, roles: %s",
+        sorted(STOP_RESTART_GUILD_IDS) or "none",
+        sorted(STOP_RESTART_ROLE_IDS) or "none",
+    )
 
 
 # --------------------------------------------------------------------- #
@@ -227,13 +269,13 @@ async def status(ctx: discord.ApplicationContext):
         )
         embed.add_field(name="👥 Players", value=f"{stats.get('online', 0)}/{stats.get('max', 0)}", inline=True)
         embed.add_field(name="⚙️ CPU", value=f"{stats.get('cpu', '?')}%", inline=True)
-        embed.add_field(name="💾 RAM", value=f"{stats.get('mem', '?')} ({stats.get('mem_percent', '?')}%)", inline=True)
+        embed.add_field(name="💾 RAM", value=f"{format_mem(stats.get('mem'))} ({stats.get('mem_percent', '?')}%)", inline=True)
 
         world = stats.get("world_name") or "—"
         if stats.get("world_size"):
             world += f" ({stats['world_size']})"
         embed.add_field(name="🗺️ World", value=str(world), inline=True)
-        embed.add_field(name="📦 Version", value=str(stats.get("version") or "—"), inline=True)
+        embed.add_field(name="📦 Version", value=SERVER_VERSION or str(stats.get("version") or "—"), inline=True)
         embed.add_field(name="⏱️ Uptime", value=parse_uptime(stats.get("started")), inline=True)
         embed.add_field(name="🕐 Started at", value=str(stats.get("started") or "—"), inline=True)
 
@@ -253,6 +295,13 @@ async def status(ctx: discord.ApplicationContext):
 async def _power_action(ctx: discord.ApplicationContext, action: str, verb: str) -> None:
     await ctx.defer()
     try:
+        if action in ("stop_server", "restart_server") and not can_use_power_commands(ctx):
+            return await ctx.respond(
+                "❌ You are not allowed to use `/stop` or `/restart`. "
+                "The configured Discord guild and role are required.",
+                ephemeral=True,
+            )
+
         srv = await crafty.resolve_server()
         name = server_name(srv)
         if action == "start_server":

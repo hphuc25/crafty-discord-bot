@@ -24,7 +24,7 @@ DISCORD_TOKEN=dummy CRAFTY_BASE_URL=https://example.com CRAFTY_API_TOKEN=x DEFAU
 Expect 6 commands (`ip`, `map`, `status`, `start`, `stop`, `restart`), each with no options. Use `.venv/bin/python` for imports — system Python lacks the deps.
 
 ## Container / deploy
-- `compose.yaml` is a self-contained example: env vars are inline in `environment:` and no external `.env` file is used. `.dockerignore` excludes `.env`/`.venv` and the Dockerfile copies only `bot.py`/`crafty.py` — update the Dockerfile when adding new source modules.
+- `compose.yaml` is a template with placeholders only: never put real hosts/UUIDs/tokens in it. Env vars are inline in `environment:`; no external `.env` is used by Docker. `.dockerignore` excludes `.env`/`.venv` and the Dockerfile copies only `bot.py`/`crafty.py` — update it when adding source modules.
 - The `python:3.12-slim` base already provides `ca-certificates`. Don't re-add `apt-get update`/apt installs: that step stalls behind `deb.debian.org` on slow networks.
 - `build` + `image: crafty-discord-bot:latest` means `docker compose up -d --build` rebuilds and restarts in one step.
 - `extra_hosts` maps `host.docker.internal` to the host gateway: if Crafty runs on the same host, `CRAFTY_BASE_URL` must use that hostname, not `127.0.0.1` (which is the container itself).

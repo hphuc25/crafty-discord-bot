@@ -1,36 +1,35 @@
 services:
   crafty-discord-bot:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    build: .
     image: crafty-discord-bot:latest
     container_name: crafty-discord-bot
     restart: unless-stopped
     init: true
 
-    # Example configuration - replace the placeholder values before deploying.
-    # No external .env file is required.
+    # Template only: replace every placeholder, then run `docker compose up -d --build`.
     environment:
-      DISCORD_TOKEN: "your_discord_bot_token_here"
-      CRAFTY_BASE_URL: "http://host.docker.internal:8443"
-      CRAFTY_API_TOKEN: "your_crafty_api_token_jwt_here"
+      DISCORD_TOKEN: "your_discord_bot_token"
+      CRAFTY_BASE_URL: "https://your-crafty-host:8443"
+      CRAFTY_API_TOKEN: "your_crafty_api_jwt"
+      DEFAULT_SERVER_ID: "your_crafty_server_uuid"
 
-      # Fallback only (leave empty when CRAFTY_API_TOKEN is set):
+      # Optional: only used when CRAFTY_API_TOKEN is empty
       CRAFTY_USERNAME: ""
       CRAFTY_PASSWORD: ""
       CRAFTY_TOTP: ""
 
       CRAFTY_VERIFY_SSL: "false"
-      # Fixed server all slash commands target (ID/UUID from Crafty)
-      DEFAULT_SERVER_ID: "17bc982d-91bb-4081-a40e-f9a31f7ae73f"
-      # Manual address for /ip. When SERVER_IP is set, /ip makes no Crafty API call.
       SERVER_IP: ""
       SERVER_PORT: ""
       PUBLIC_IP: ""
       MAP_URL: "https://map.example.com/"
+      SERVER_VERSION: "your_minecraft_version"
+
+      # /stop and /restart require both IDs. Empty = disabled.
+      STOP_RESTART_GUILD_ID: "your_discord_guild_id"
+      STOP_RESTART_ROLE_ID: "your_discord_role_id"
       TEST_GUILD_ID: ""
 
-    # Allows http://host.docker.internal:8443 when Crafty runs on the host machine.
     extra_hosts:
       - "host.docker.internal:host-gateway"
 
