@@ -1,6 +1,6 @@
 # Crafty Discord Bot
 
-Slash commands: `/ip`, `/map`, `/status`, `/start`, `/stop`, `/restart`.
+Slash commands: `/ip`, `/map`, `/status`, `/start`, `/stop`, `/restart`, `/command`.
 Every command targets the single Crafty server set by `DEFAULT_SERVER_ID`.
 
 ## Deploy
@@ -37,14 +37,15 @@ All settings are in `compose.yaml` (`environment:`) or in `.env` for local runs.
 | `PUBLIC_IP` | ❌ | Fallback IP for `/ip` |
 | `MAP_URL` | ❌ | Web map link for `/map` |
 | `SERVER_VERSION` | ❌ | Version shown by `/status` |
-| `STOP_RESTART_GUILD_ID` | ❌ | Discord guild allowed to use `/stop` and `/restart` |
-| `STOP_RESTART_ROLE_ID` | ❌ | Role required for `/stop` and `/restart` |
+| `STOP_RESTART_GUILD_ID` | ❌ | Guild allowed to use `/stop`, `/restart`, `/command` |
+| `STOP_RESTART_ROLE_ID` | ❌ | Role required for `/stop`, `/restart`, `/command` |
 | `TEST_GUILD_ID` | ❌ | Register commands instantly in one guild |
 
 Notes:
 - Create the API token in Crafty: **User Settings → API Keys**.
 - `CRAFTY_BASE_URL` needs the scheme (`http://` or `https://`). If Crafty runs on the same host as the bot, use `http://host.docker.internal:<port>`.
-- `/stop` and `/restart` work only with **both** the configured guild and role. Empty values disable them.
+- `/stop`, `/restart`, `/command` require **both** configured guild and role. Empty values disable them.
+- `/command <text>` sends a Crafty console command. Do **not** type a leading `/` (e.g. `say Hello`).
 - `SERVER_VERSION` overrides Crafty's version field; RAM is displayed in MB.
 
 ## Security

@@ -8,6 +8,7 @@ Small py-cord bot. No test/lint/CI config — verify manually as below.
 - Auth: `CRAFTY_API_TOKEN` (JWT from a Crafty API key) is primary and uses no `/auth/login`. Username/password is fallback only; HTTP 401 triggers one forced re-login + retry. Don't reintroduce mandatory login.
 - Commands are fixed to one server: `DEFAULT_SERVER_ID` is required and `crafty.resolve_server()` takes no query. Do not re-add a `server` slash-command option or autocomplete.
 - `SERVER_IP` (or legacy `PUBLIC_IP`) makes `/ip` answer purely from env without any Crafty API call; `SERVER_PORT` is optional.
+- `/stop`, `/restart`, `/command` share `STOP_RESTART_GUILD_ID` + `STOP_RESTART_ROLE_ID` (comma-separated IDs allowed); empty values deny them. `/command` rejects any `/` in its input and posts to `/api/v2/servers/{id}/stdin` as `text/plain` — Crafty console commands have no leading slash.
 - `CRAFTY_BASE_URL` must include `http://` or `https://`; the Crafty OpenAPI spec defines it as a full base URL. A bare host:port raises `NonHttpUrlClientError`.
 
 ## py-cord quirks (hit during development)
@@ -21,7 +22,7 @@ python3 -m py_compile bot.py crafty.py
 DISCORD_TOKEN=dummy CRAFTY_BASE_URL=https://example.com CRAFTY_API_TOKEN=x DEFAULT_SERVER_ID=s1 \
   .venv/bin/python -c "import bot; print([(c.name, [o.name for o in c.options]) for c in bot.bot.pending_application_commands])"
 ```
-Expect 6 commands (`ip`, `map`, `status`, `start`, `stop`, `restart`), each with no options. Use `.venv/bin/python` for imports — system Python lacks the deps.
+Expect 7 commands: `ip`, `map`, `status`, `start`, `stop`, `restart` (no options) and `command` (one string option). Use `.venv/bin/python` for imports — system Python lacks the deps.
 
 ## Container / deploy
 - `compose.yaml` is a template with placeholders only: never put real hosts/UUIDs/tokens in it. Env vars are inline in `environment:`; no external `.env` is used by Docker. `.dockerignore` excludes `.env`/`.venv` and the Dockerfile copies only `bot.py`/`crafty.py` — update it when adding source modules.

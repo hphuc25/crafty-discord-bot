@@ -7,6 +7,7 @@ import os
 from datetime import datetime
 
 import discord
+from discord import Option
 from dotenv import load_dotenv
 
 from crafty import CraftyAPIError, CraftyClient
@@ -159,7 +160,7 @@ async def on_ready() -> None:
     log.info("Crafty authentication: %s", mode)
     log.info("Target server: %s", DEFAULT_SERVER_ID)
     log.info(
-        "Stop/restart access - guilds: %s, roles: %s",
+        "Restricted command access (stop/restart/command) - guilds: %s, roles: %s",
         sorted(STOP_RESTART_GUILD_IDS) or "none",
         sorted(STOP_RESTART_ROLE_IDS) or "none",
     )
@@ -333,6 +334,35 @@ async def stop(ctx: discord.ApplicationContext):
 @bot.slash_command(name="restart", description="Restart the server (bonus)")
 async def restart(ctx: discord.ApplicationContext):
     await _power_action(ctx, "restart_server", "restart")
+
+
+@bot.slash_command(name="command", description="Send a console command to the server")
+async def console_command(
+    ctx: discord.ApplicationContext,
+    command: Option(str, "Console command to send, without a leading slash", required=True),
+):
+    """Send a raw console command to the configured server."""
+    await ctx.defer()
+    command = (command or "").strip()
+    if not command:
+        return await ctx.respond("❌ Command cannot be empty.", ephemeral=True)
+    if "/" in command:
+        return await ctx.respond(
+            "❌ Do not include `/` in the command. Example: `say Hello`",
+            ephemeral=True,
+        )
+    if not can_use_power_commands(ctx):
+        return await ctx.respond(
+            "❌ You are not allowed to use `/command`. "
+            "The configured Discord guild and role are required.",
+            ephemeral=True,
+        )
+    try:
+        srv = await crafty.resolve_server()
+        await crafty.send_stdin(srv["server_id"], command)
+        await ctx.respond(f"✅ Sent to **{server_name(srv)}**: `{command}`")
+    except Exception as err:
+        await error_reply(ctx, err)
 
 
 # --------------------------------------------------------------------- #

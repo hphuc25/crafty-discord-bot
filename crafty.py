@@ -147,6 +147,15 @@ class CraftyClient:
         data = await self.request("GET", f"/api/v2/servers/{server_id}/stats")
         return data.get("data") or {}
 
+    async def send_stdin(self, server_id: str, command: str) -> dict[str, Any]:
+        """Send a raw console command (no leading slash) to a server via stdin."""
+        return await self.request(
+            "POST",
+            f"/api/v2/servers/{server_id}/stdin",
+            data=command,
+            headers={"Content-Type": "text/plain"},
+        )
+
     async def send_action(self, server_id: str, action: str) -> dict[str, Any]:
         valid = {
             "start_server",
